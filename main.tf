@@ -86,7 +86,7 @@ resource "aws_iam_role_policy_attachment" "ssm_policy" {
 resource "aws_iam_instance_profile" "ssm_profile" {
   name = "terraform-ec2-ssm-profile"
   role = aws_iam_role.ssm_role.name
-}terraform-ec2-instance
+}
 
 resource "aws_instance" "example" {
   ami                         = var.ami_id
