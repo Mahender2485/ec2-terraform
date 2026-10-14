@@ -87,7 +87,7 @@ resource "aws_iam_instance_profile" "ssm_profile" {
   name = "terraform-ec2-ssm-profile"
   role = aws_iam_role.ssm_role.name
 }
-
+Ad
 resource "aws_instance" "example" {
   ami                         = var.ami_id
   instance_type               = var.instance_type
@@ -99,7 +99,7 @@ resource "aws_instance" "example" {
   # No key_name: do not associate an EC2 key pair.
 
   tags = {
-    Name = "application-vm"
+    Name = "mongodb-vm"
   }
 }
 
