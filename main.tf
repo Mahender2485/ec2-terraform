@@ -99,7 +99,7 @@ resource "aws_instance" "example" {
   # No key_name: do not associate an EC2 key pair.
 
   tags = {
-    Name = "terraform-ec2-instance"
+    Name = "mongo-db"
   }
 }
 
