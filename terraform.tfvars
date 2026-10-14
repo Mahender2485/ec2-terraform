@@ -1,0 +1,5 @@
+aws_region    = "us-east-1"
+vpc_id        = "vpc-0d9fcd0433c9ec4e2"
+ami_id        = "ami-0220d79f3f480ecf5"
+instance_type = "t3.micro"
+my_ip         = "184.190.96.180"
