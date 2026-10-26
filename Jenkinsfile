@@ -5,6 +5,7 @@ pipeline {
         timestamps()
         disableConcurrentBuilds()
         skipDefaultCheckout(true)
+        timeout(time: 60, unit: 'MINUTES')
     }
 
     environment {
@@ -61,7 +62,52 @@ pipeline {
                         variable: 'AWS_SECRET_ACCESS_KEY'
                     )
                 ]) {
-                    sh 'terraform plan -input=false -out=tfplan'
+                    sh '''
+                        set -eu
+
+                        terraform plan \
+                            -input=false \
+                            -out=tfplan
+
+                        terraform show -no-color tfplan > tfplan.txt
+
+                        echo "Terraform plan generated successfully."
+                    '''
+
+                    echo 'Displaying Terraform plan for review:'
+                    sh 'cat tfplan.txt'
+                }
+            }
+        }
+
+        stage('Manual Approval') {
+            steps {
+                script {
+                    def approval = timeout(
+                        time: 15,
+                        unit: 'MINUTES'
+                    ) {
+                        input(
+                            message: """
+EC2 Deployment Approval Required
+
+Environment: Development
+AWS Region: ${env.AWS_DEFAULT_REGION}
+
+Review the Terraform plan in the Jenkins console.
+
+Do you approve the Terraform changes and EC2 creation?
+""",
+                            ok: 'Approve Deployment',
+                            submitter: 'admin,devops-lead',
+                            submitterParameter: 'APPROVED_BY'
+                        )
+                    }
+
+                    env.TERRAFORM_APPROVED_BY =
+                        approval.toString()
+
+                    echo "Deployment approved by: ${env.TERRAFORM_APPROVED_BY}"
                 }
             }
         }
@@ -78,8 +124,12 @@ pipeline {
                         variable: 'AWS_SECRET_ACCESS_KEY'
                     )
                 ]) {
-                    sh 'terraform apply -input=false -auto-approve tfplan'
-                    sh 'terraform output'
+                    sh '''
+                        set -eu
+
+                        terraform apply -input=false -auto-approve tfplan
+                        terraform output
+                    '''
                 }
             }
         }
@@ -87,7 +137,19 @@ pipeline {
 
     post {
         success {
-            echo 'SUCCESS: Terraform deployment completed.'
+            echo """
+            SUCCESS: Terraform deployment completed.
+            Approved by: ${env.TERRAFORM_APPROVED_BY}
+            """
+        }
+
+        aborted {
+            echo '''
+            ABORTED: Deployment was cancelled, rejected,
+            or approval timed out.
+            Terraform Apply was not executed if cancellation
+            occurred before the Apply stage.
+            '''
         }
 
         failure {
